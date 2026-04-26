@@ -13,8 +13,40 @@ export function formatDateRange(start: Date, end: Date): string {
   return `${year} · ${startStr} — ${endStr}`;
 }
 
+// Local date string — avoids UTC offset shifting the date
 export function dateToStr(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Today's date string in local time
+export function todayStr(): string {
+  return dateToStr(new Date());
+}
+
+// Get Monday of the ISO week containing date
+export function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sun ... 6=Sat
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// ISO week number
+export function getWeekNumber(date: Date): number {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+}
+
+// "2025 · 第18周 · 4月28日 — 5月4日"
+export function formatWeekRange(weekStart: Date): string {
+  const weekEnd = addDays(weekStart, 6);
+  const weekNum = getWeekNumber(weekStart);
+  const fmt = (d: Date) => `${d.getMonth() + 1}月${d.getDate()}日`;
+  return `第${weekNum}周 · ${fmt(weekStart)} — ${fmt(weekEnd)}`;
 }
 
 export function strToDate(s: string): Date {

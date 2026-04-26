@@ -43,14 +43,14 @@ export function UploadZone({ date, onUpload, isLoading, disabled }: UploadZonePr
   return (
     <div
       className={cn(
-        'relative flex flex-col items-center justify-center gap-1.5',
-        'border border-dashed rounded-md transition-all duration-200 cursor-pointer',
-        'border-ink/15 hover:border-ink/30',
+        'relative flex flex-col items-center justify-center gap-1',
+        'border border-dashed rounded-lg transition-all duration-200 cursor-pointer',
+        'border-[#d4d4d8] hover:border-[#a1a1aa] hover:bg-white/60',
         dragOver && 'drop-active',
-        disabled && 'opacity-40 pointer-events-none',
+        disabled && 'opacity-30 pointer-events-none',
         isLoading && 'pointer-events-none'
       )}
-      style={{ minHeight: 72, padding: '10px 8px' }}
+      style={{ minHeight: 64, padding: '8px' }}
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
@@ -70,28 +70,14 @@ export function UploadZone({ date, onUpload, isLoading, disabled }: UploadZonePr
 
       <AnimatePresence mode="wait">
         {isLoading ? (
-          <motion.div
-            key="loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-1"
-          >
-            <Loader2 size={16} className="text-ink-light animate-spin" />
-            <span className="font-kalam text-[10px] text-ink-light">上传中...</span>
+          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-1">
+            <Loader2 size={14} className="text-[#a1a1aa] animate-spin" />
+            <span className="text-[9px] text-[#a1a1aa]">Uploading…</span>
           </motion.div>
         ) : (
-          <motion.div
-            key="idle"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-1"
-          >
-            <ImagePlus size={14} className="text-ink/30" />
-            <span className="font-kalam text-[9px] text-ink/30 text-center leading-tight">
-              拖入 / 粘贴<br />截图
-            </span>
+          <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-1">
+            <ImagePlus size={13} className="text-[#d4d4d8]" />
+            <span className="text-[9px] text-[#c4c4c7] text-center leading-tight">drop · paste</span>
           </motion.div>
         )}
       </AnimatePresence>

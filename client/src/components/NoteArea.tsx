@@ -7,11 +7,11 @@ const MIN_HEIGHT = 80;
 const MAX_HEIGHT = 480;
 
 interface NoteAreaProps {
-  date: Date;
+  weekStart: Date;
 }
 
-export function NoteArea({ date }: NoteAreaProps) {
-  const dateStr = dateToStr(date);
+export function NoteArea({ weekStart }: NoteAreaProps) {
+  const dateStr = dateToStr(weekStart);
   const [height, setHeight] = useState(120);
   const [localContent, setLocalContent] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -43,17 +43,14 @@ export function NoteArea({ date }: NoteAreaProps) {
     saveTimeout.current = setTimeout(() => save(val), 800);
   };
 
-  // Drag resize
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     dragStartY.current = e.clientY;
     dragStartH.current = height;
-
     const onMove = (ev: MouseEvent) => {
       if (dragStartY.current === null) return;
       const delta = dragStartY.current - ev.clientY;
-      const newH = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, dragStartH.current + delta));
-      setHeight(newH);
+      setHeight(h => Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, dragStartH.current + delta)));
     };
     const onUp = () => {
       dragStartY.current = null;
@@ -65,47 +62,28 @@ export function NoteArea({ date }: NoteAreaProps) {
   }, [height]);
 
   return (
-    <div className="w-full flex flex-col" style={{ paddingTop: 2 }}>
+    <div className="w-full flex flex-col rounded-xl overflow-hidden" style={{ background: '#f4f4f5' }}>
       {/* Drag handle */}
       <div
-        className="w-full flex items-center justify-center cursor-ns-resize group py-1.5"
+        className="w-full flex items-center justify-center cursor-ns-resize group py-2"
         onMouseDown={handleDragStart}
       >
-        <div className="w-12 h-1 rounded-full bg-ink/10 group-hover:bg-ink/25 transition-colors" />
+        <div className="w-8 h-0.5 rounded-full bg-[#d4d4d8] group-hover:bg-[#a1a1aa] transition-colors" />
       </div>
 
-      {/* Note section */}
-      <div
-        className="w-full border-t border-dashed border-ink/10 relative"
-        style={{ height }}
-      >
-        {/* Label */}
-        <div className="absolute top-2 left-3 flex items-center gap-2 pointer-events-none">
-          <span className="font-caveat text-sm text-ink-light opacity-50 select-none">✏ 笔记</span>
-          {isDirty && (
-            <span className="font-kalam text-[9px] text-ink-light opacity-40">保存中...</span>
-          )}
+      <div className="relative" style={{ height }}>
+        <div className="absolute top-2 left-4 flex items-center gap-2 pointer-events-none">
+          <span className="text-[10px] text-[#a1a1aa] select-none tracking-wide uppercase">Notes</span>
+          {isDirty && <span className="text-[9px] text-[#c4c4c7]">saving…</span>}
         </div>
 
         <textarea
           value={localContent}
           onChange={e => handleChange(e.target.value)}
-          className="w-full h-full resize-none bg-transparent font-caveat text-sm text-ink leading-relaxed outline-none"
-          style={{
-            padding: '28px 16px 12px',
-            caretColor: '#2d2416',
-          }}
-          placeholder="在这里记录灵感、想法、设计思路..."
+          className="w-full h-full resize-none bg-transparent text-sm text-[#18181b] leading-relaxed outline-none"
+          style={{ padding: '28px 16px 12px', caretColor: '#18181b' }}
+          placeholder="Notes, ideas, design thoughts…"
           spellCheck={false}
-        />
-
-        {/* Subtle ruled lines */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'repeating-linear-gradient(transparent, transparent 27px, rgba(45,36,22,0.04) 27px, rgba(45,36,22,0.04) 28px)',
-            backgroundPosition: '0 32px',
-          }}
         />
       </div>
     </div>

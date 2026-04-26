@@ -7,35 +7,30 @@ import { dateToStr, addDays } from '@/lib/utils';
 import type { ImageRecord } from '@/lib/api';
 
 interface CalendarViewProps {
-  startDate: Date;
+  weekStart: Date; // always Monday
 }
 
-export function CalendarView({ startDate }: CalendarViewProps) {
+export function CalendarView({ weekStart }: CalendarViewProps) {
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(900);
+  const [containerWidth, setContainerWidth] = useState(960);
 
-  // Measure container width for responsive column sizing
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      setContainerWidth(entry.contentRect.width);
-    });
+    const ro = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
     ro.observe(el);
     setContainerWidth(el.getBoundingClientRect().width);
     return () => ro.disconnect();
   }, []);
 
-  const dates = [
-    dateToStr(startDate),
-    dateToStr(addDays(startDate, 1)),
-    dateToStr(addDays(startDate, 2)),
-  ];
-  const endDate = addDays(startDate, 2);
+  // Mon=0 ... Fri=4, Sat=5, Sun=6
+  const weekDates = Array.from({ length: 7 }, (_, i) => dateToStr(addDays(weekStart, i)));
+  const [mon, tue, wed, thu, fri, sat, sun] = weekDates;
+  const weekEnd = addDays(weekStart, 6);
 
-  const { data: images = [] } = useImages(startDate, endDate);
+  const { data: images = [] } = useImages(weekStart, weekEnd);
   const { data: quota } = useQuota();
 
   const uploadMutation = useUploadImage();
@@ -43,10 +38,13 @@ export function CalendarView({ startDate }: CalendarViewProps) {
   const deleteTermMutation = useDeleteTerm();
   const retryMutation = useRetryTerms();
 
-  const imagesByDate = dates.reduce<Record<string, ImageRecord[]>>((acc, d) => {
+  const imagesByDate = weekDates.reduce<Record<string, ImageRecord[]>>((acc, d) => {
     acc[d] = images.filter(img => img.date === d);
     return acc;
   }, {});
+
+  // Weekend cell shows both Sat + Sun images, uploads go to Saturday
+  const weekendImages = [...(imagesByDate[sat] ?? []), ...(imagesByDate[sun] ?? [])];
 
   const isDisabled = quota ? (quota.daily.remaining <= 0 || !quota.user.allowed) : false;
 
@@ -67,32 +65,44 @@ export function CalendarView({ startDate }: CalendarViewProps) {
     finally { setRetryingId(null); }
   }, [retryMutation]);
 
-  // Each cell gets 1/3 of container (minus 2 gaps of 16px)
-  const cellWidth = Math.floor((containerWidth - 32) / 3);
+  // Each cell = (containerWidth - 2 gaps) / 3
+  const GAP = 16;
+  const cellWidth = Math.floor((containerWidth - GAP * 2) / 3);
+
+  const commonProps = {
+    cellWidth,
+    onUpload: handleUpload,
+    onDeleteImage: handleDeleteImage,
+    onDeleteTerm: handleDeleteTerm,
+    onRetryTerms: handleRetryTerms,
+    uploadingFor,
+    retryingId,
+    isDisabled,
+  };
 
   return (
-    <div className="flex flex-col w-full" ref={containerRef}>
-      {/* Day cells row */}
-      <div className="flex w-full items-start" style={{ gap: 16, paddingBottom: 16 }}>
-        {dates.map((date) => (
-          <DayCell
-            key={date}
-            date={date}
-            images={imagesByDate[date] ?? []}
-            cellWidth={cellWidth}
-            onUpload={handleUpload}
-            onDeleteImage={handleDeleteImage}
-            onDeleteTerm={handleDeleteTerm}
-            onRetryTerms={handleRetryTerms}
-            uploadingFor={uploadingFor}
-            retryingId={retryingId}
-            isDisabled={isDisabled}
-          />
-        ))}
+    <div className="flex flex-col w-full gap-4" ref={containerRef}>
+      {/* Row 1: Mon / Tue / Wed */}
+      <div className="grid grid-cols-3 gap-4">
+        <DayCell date={mon} images={imagesByDate[mon] ?? []} {...commonProps} />
+        <DayCell date={tue} images={imagesByDate[tue] ?? []} {...commonProps} />
+        <DayCell date={wed} images={imagesByDate[wed] ?? []} {...commonProps} />
       </div>
 
-      {/* Notes row */}
-      <NoteArea date={startDate} />
+      {/* Row 2: Thu / Fri / Weekend (merged) */}
+      <div className="grid grid-cols-3 gap-4">
+        <DayCell date={thu} images={imagesByDate[thu] ?? []} {...commonProps} />
+        <DayCell date={fri} images={imagesByDate[fri] ?? []} {...commonProps} />
+        <DayCell
+          date={sat}
+          images={weekendImages}
+          isWeekend
+          {...commonProps}
+        />
+      </div>
+
+      {/* Row 3: Full-width note area */}
+      <NoteArea weekStart={weekStart} />
     </div>
   );
 }

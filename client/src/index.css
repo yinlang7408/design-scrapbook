@@ -3,69 +3,44 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
-  html {
-    background-color: #faf8f5;
-  }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background-color: #faf8f5;
-    color: #2d2416;
+  html, body {
+    background-color: #ffffff;
+    color: #18181b;
     min-height: 100vh;
-    /* Subtle paper texture using CSS noise */
-    background-image:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeBlend in='SourceGraphic' mode='multiply'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #d4c9b8;
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #b5a898;
-  }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
 }
 
 @layer components {
+  /* pushpin reused in PolaroidCard — restyle to neutral */
+  .pushpin {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #d4d4d8, #a1a1aa);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    pointer-events: none;
+  }
+
   .washi-tape {
     position: absolute;
-    height: 22px;
-    opacity: 0.72;
+    height: 18px;
+    opacity: 0.55;
     border-radius: 2px;
     pointer-events: none;
   }
-
-  .pushpin {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #e8d5c0, #c4a882);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.25), inset 0 1px 2px rgba(255,255,255,0.4);
-    pointer-events: none;
-  }
-
-  .paperclip {
-    position: absolute;
-    pointer-events: none;
-    opacity: 0.65;
-    color: #9a8878;
-  }
 }
 
-/* Drag-over highlight */
 .drop-active {
-  background-color: rgba(180, 197, 216, 0.12);
-  border-color: #b4c5d8 !important;
+  background-color: #f4f4f5 !important;
+  border-color: #a1a1aa !important;
 }
