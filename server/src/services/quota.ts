@@ -1,12 +1,13 @@
 import { db } from '../db/index.js';
 import { dailyUsage, images } from '../db/schema.js';
 import { eq, sql, count } from 'drizzle-orm';
+import { dateInTimeZone } from '../lib/timezone.js';
 
 const DAILY_LIMIT_CENTS = 80;
 const USER_IMAGE_LIMIT = 200;
 
 function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  return dateInTimeZone();
 }
 
 export async function checkDailyQuota(): Promise<{ allowed: boolean; usedCents: number }> {

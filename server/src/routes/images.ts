@@ -4,10 +4,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { db } from '../db/index.js';
 import { images, terms } from '../db/schema.js';
-import { eq, and, gte, lte, sql } from 'drizzle-orm';
+import { eq, and, gte, lte } from 'drizzle-orm';
 import { upload } from '../middleware/upload.js';
 import { generateTerms } from '../services/claude.js';
 import { checkDailyQuota, checkUserQuota } from '../services/quota.js';
+import { dateInTimeZone } from '../lib/timezone.js';
 
 const router = Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,7 +34,7 @@ router.post('/upload', upload.single('image'), async (req, res) => {
       return res.status(403).json({ error: 'user_limit', message: '已达 200 张上限，删除旧图片后继续' });
     }
 
-    const dateStr = (req.body.date as string) || new Date().toISOString().slice(0, 10);
+    const dateStr = (req.body.date as string) || dateInTimeZone();
     const relativePath = path.relative(uploadsDir, req.file.path);
 
     // Save image record
@@ -50,7 +51,7 @@ router.post('/upload', upload.single('image'), async (req, res) => {
 
     try {
       const imageBuffer = fs.readFileSync(req.file.path);
-      const raw = await generateTerms(imageBuffer, req.file.mimetype);
+      const raw = await generateTerms(imageBuffer);
 
       if (raw.length > 0) {
         const inserted = await db.insert(terms).values(
@@ -174,7 +175,7 @@ router.post('/:id/retry-terms', async (req, res) => {
 
     const filePath = path.join(uploadsDir, img.filePath);
     const imageBuffer = fs.readFileSync(filePath);
-    const raw = await generateTerms(imageBuffer, img.mimeType);
+    const raw = await generateTerms(imageBuffer);
 
     await db.delete(terms).where(eq(terms.imageId, id));
 

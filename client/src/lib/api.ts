@@ -28,6 +28,7 @@ export interface ImageRecord {
 }
 
 export interface QuotaResponse {
+  timezone: string;
   daily: { costCents: number; callCount: number; limitCents: number; remaining: number };
   user: { count: number; limit: number; allowed: boolean };
 }
@@ -71,4 +72,30 @@ export async function fetchNote(date: string): Promise<{ content: string }> {
 
 export async function saveNote(date: string, content: string): Promise<void> {
   await api.put('/notes', { date, content });
+}
+
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+
+    if (typeof data === 'string' && data.trim()) {
+      return data;
+    }
+
+    if (
+      typeof data === 'object' &&
+      data !== null &&
+      'message' in data &&
+      typeof data.message === 'string' &&
+      data.message.trim()
+    ) {
+      return data.message;
+    }
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
 }

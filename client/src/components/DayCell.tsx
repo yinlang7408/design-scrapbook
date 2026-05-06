@@ -28,7 +28,9 @@ interface DayCellProps {
   onUpload: (file: File, date: string) => Promise<void>;
   onDeleteImage: (id: string) => void;
   onDeleteTerm: (imageId: string, termId: string) => void;
+  onRetryTerms: (imageId: string) => void;
   uploadingFor?: string | null;
+  retryingImageId?: string | null;
   isDisabled?: boolean;
   isWeekend?: boolean;
   borderLeft?: boolean;
@@ -37,8 +39,8 @@ interface DayCellProps {
 
 export function DayCell({
   date, images, cellWidth,
-  onUpload, onDeleteImage, onDeleteTerm,
-  uploadingFor, isDisabled, isWeekend,
+  onUpload, onDeleteImage, onDeleteTerm, onRetryTerms,
+  uploadingFor, retryingImageId, isDisabled, isWeekend,
   borderLeft, borderTop,
 }: DayCellProps) {
   const d = strToDate(date);
@@ -63,6 +65,8 @@ export function DayCell({
         width={cardWidth}
         onDelete={onDeleteImage}
         onDeleteTerm={onDeleteTerm}
+        onRetryTerms={onRetryTerms}
+        isRetryingTerms={retryingImageId === img.id}
       />
     </div>
   );

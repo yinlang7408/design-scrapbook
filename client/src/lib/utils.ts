@@ -84,8 +84,36 @@ export function midnight(): Date {
   return d;
 }
 
-export function secondsUntilMidnight(): number {
-  return Math.ceil((midnight().getTime() - Date.now()) / 1000);
+function timePartsInZone(date: Date, timeZone: string): { hour: number; minute: number; second: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+
+  const values = parts.reduce<Record<string, string>>((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+
+  return {
+    hour: Number(values.hour ?? '0'),
+    minute: Number(values.minute ?? '0'),
+    second: Number(values.second ?? '0'),
+  };
+}
+
+export function secondsUntilMidnight(
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+): number {
+  const { hour, minute, second } = timePartsInZone(new Date(), timeZone);
+  const elapsed = hour * 3600 + minute * 60 + second;
+
+  if (elapsed === 0) return 0;
+
+  return Math.max(0, 24 * 3600 - elapsed);
 }
 
 export function formatCountdown(seconds: number): string {

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getDailyUsage, checkUserQuota } from '../services/quota.js';
+import { APP_TIMEZONE } from '../lib/timezone.js';
 
 const router = Router();
 
@@ -12,6 +13,7 @@ router.get('/', async (req, res) => {
     ]);
 
     return res.json({
+      timezone: APP_TIMEZONE,
       daily: {
         costCents: usage.costCents,
         callCount: usage.callCount,

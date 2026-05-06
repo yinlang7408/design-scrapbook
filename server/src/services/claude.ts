@@ -1,8 +1,17 @@
+import Anthropic from '@anthropic-ai/sdk';
 import sharp from 'sharp';
 import { recordUsage } from './quota.js';
 
-const API_KEY = process.env.ANTHROPIC_AUTH_TOKEN ?? '';
-const BASE_URL = (process.env.ANTHROPIC_BASE_URL ?? 'https://api.anthropic.com').replace(/\/$/, '');
+const API_KEY = process.env.ANTHROPIC_API_KEY ?? process.env.ANTHROPIC_AUTH_TOKEN ?? '';
+const BASE_URL = process.env.ANTHROPIC_BASE_URL?.replace(/\/$/, '');
+const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-3-5-sonnet-latest';
+
+const anthropic = API_KEY
+  ? new Anthropic({
+      apiKey: API_KEY,
+      baseURL: BASE_URL || undefined,
+    })
+  : null;
 
 const PROMPT = `You are a design expert. Analyze this image and generate exactly 3-5 design terminology keywords that best describe its visual style, layout, color palette, typography, composition, or interaction patterns.
 
@@ -23,7 +32,11 @@ export interface DesignTerm {
   zh: string;
 }
 
-export async function generateTerms(imageBuffer: Buffer, mimeType: string): Promise<DesignTerm[]> {
+export async function generateTerms(imageBuffer: Buffer): Promise<DesignTerm[]> {
+  if (!anthropic) {
+    throw new Error('Missing ANTHROPIC_API_KEY');
+  }
+
   const compressed = await sharp(imageBuffer)
     .resize(1280, 1280, { fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 82 })
@@ -31,37 +44,24 @@ export async function generateTerms(imageBuffer: Buffer, mimeType: string): Prom
 
   const base64 = compressed.toString('base64');
 
-  const body = {
-    model: 'deepseek-v4-pro',
+  const data = await anthropic.messages.create({
+    model: MODEL,
     max_tokens: 512,
     messages: [{
       role: 'user',
       content: [
-        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+        {
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: 'image/jpeg',
+            data: base64,
+          },
+        },
         { type: 'text', text: PROMPT },
       ],
     }],
-  };
-
-  const res = await fetch(`${BASE_URL}/v1/messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify(body),
   });
-
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    throw new Error(`Claude API error ${res.status}: ${errText.slice(0, 300)}`);
-  }
-
-  const data = await res.json() as {
-    usage?: { input_tokens: number; output_tokens: number };
-    content: Array<{ type: string; text?: string }>;
-  };
 
   const inputTokens = data.usage?.input_tokens ?? 0;
   const outputTokens = data.usage?.output_tokens ?? 0;

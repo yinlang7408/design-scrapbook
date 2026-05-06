@@ -10,11 +10,17 @@ export function QuotaBanner() {
 
   useEffect(() => {
     if (!data?.daily || data.daily.remaining > 0) return;
+
+    const updateCountdown = () => {
+      setCountdown(formatCountdown(secondsUntilMidnight(data.timezone)));
+    };
+
+    updateCountdown();
     const id = setInterval(() => {
-      setCountdown(formatCountdown(secondsUntilMidnight()));
+      updateCountdown();
     }, 1000);
     return () => clearInterval(id);
-  }, [data?.daily]);
+  }, [data?.daily?.remaining, data?.timezone]);
 
   if (!data) return null;
 

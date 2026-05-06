@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2 } from 'lucide-react';
+import { Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { TermTag } from './TermTag';
 import { seededRandom } from '@/lib/utils';
 import type { ImageRecord } from '@/lib/api';
@@ -41,10 +41,12 @@ interface PolaroidCardProps {
   width: number;
   onDelete: (id: string) => void;
   onDeleteTerm: (imageId: string, termId: string) => void;
+  onRetryTerms?: (id: string) => void;
+  isRetryingTerms?: boolean;
 }
 
 export function PolaroidCard({
-  image, width, onDelete, onDeleteTerm,
+  image, width, onDelete, onDeleteTerm, onRetryTerms, isRetryingTerms,
 }: PolaroidCardProps) {
   const [hovered, setHovered] = useState(false);
 
@@ -98,7 +100,27 @@ export function PolaroidCard({
       </div>
 
       {/* Bottom strip */}
-      <div className="h-6" />
+      {image.terms.length === 0 && onRetryTerms ? (
+        <div className="px-2 pt-1 pb-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRetryTerms(image.id);
+            }}
+            disabled={isRetryingTerms}
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] text-[#3f3f46] bg-[#f4f4f5] hover:bg-[#e4e4e7] transition-colors disabled:opacity-70 disabled:cursor-wait"
+          >
+            {isRetryingTerms ? (
+              <Loader2 size={11} className="animate-spin" />
+            ) : (
+              <RefreshCw size={11} />
+            )}
+            <span>{isRetryingTerms ? 'Generating…' : 'Generate tags'}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="h-6" />
+      )}
 
       {image.terms.length > 0 && (
         <div className="absolute left-2 z-30" style={{ bottom: termBottom }}>
