@@ -178,9 +178,12 @@ router.post('/:id/retry-terms', async (req, res) => {
 
     await db.delete(terms).where(eq(terms.imageId, id));
 
-    const inserted = await db.insert(terms).values(
-      raw.map((t, i) => ({ imageId: id, termEn: t.en, termZh: t.zh, position: i }))
-    ).returning();
+    let inserted: typeof terms.$inferSelect[] = [];
+    if (raw.length > 0) {
+      inserted = await db.insert(terms).values(
+        raw.map((t, i) => ({ imageId: id, termEn: t.en, termZh: t.zh, position: i }))
+      ).returning();
+    }
 
     return res.json({ terms: inserted });
   } catch (e) {

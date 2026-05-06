@@ -1,9 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { DayCell } from './DayCell';
-import { NoteArea } from './NoteArea';
-import { useImages, useUploadImage, useDeleteImage, useDeleteTerm, useRetryTerms } from '@/hooks/useImages';
+import { useImages, useUploadImage, useDeleteImage, useDeleteTerm } from '@/hooks/useImages';
 import { useQuota } from '@/hooks/useQuota';
-import { dateToStr, addDays } from '@/lib/utils';
+import { dateToStr, addDays, todayStr } from '@/lib/utils';
 import type { ImageRecord } from '@/lib/api';
 
 interface CalendarViewProps {
@@ -12,7 +11,6 @@ interface CalendarViewProps {
 
 export function CalendarView({ weekStart }: CalendarViewProps) {
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
-  const [retryingId, setRetryingId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
 
@@ -36,7 +34,6 @@ export function CalendarView({ weekStart }: CalendarViewProps) {
   const uploadMutation = useUploadImage();
   const deleteMutation = useDeleteImage();
   const deleteTermMutation = useDeleteTerm();
-  const retryMutation = useRetryTerms();
 
   const imagesByDate = weekDates.reduce<Record<string, ImageRecord[]>>((acc, d) => {
     acc[d] = images.filter(img => img.date === d);
@@ -59,50 +56,48 @@ export function CalendarView({ weekStart }: CalendarViewProps) {
     deleteTermMutation.mutate({ imageId, termId });
   }, [deleteTermMutation]);
 
-  const handleRetryTerms = useCallback(async (imageId: string) => {
-    setRetryingId(imageId);
-    try { await retryMutation.mutateAsync(imageId); }
-    finally { setRetryingId(null); }
-  }, [retryMutation]);
+  // Global paste always goes to today
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = Array.from(e.clipboardData?.items ?? []);
+      const imageItem = items.find(i => i.type.startsWith('image/'));
+      if (!imageItem) return;
+      const file = imageItem.getAsFile();
+      if (!file) return;
+      handleUpload(file, todayStr());
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [handleUpload]);
 
-  // Each cell = (containerWidth - 2 gaps) / 3
-  const GAP = 16;
-  const cellWidth = Math.floor((containerWidth - GAP * 2) / 3);
+  // Each cell = containerWidth / 3
+  const cellWidth = Math.floor(containerWidth / 3);
 
   const commonProps = {
     cellWidth,
     onUpload: handleUpload,
     onDeleteImage: handleDeleteImage,
     onDeleteTerm: handleDeleteTerm,
-    onRetryTerms: handleRetryTerms,
     uploadingFor,
-    retryingId,
     isDisabled,
   };
 
   return (
-    <div className="flex flex-col w-full gap-4" ref={containerRef}>
+    <div className="flex flex-col w-full" ref={containerRef}>
       {/* Row 1: Mon / Tue / Wed */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 items-stretch">
         <DayCell date={mon} images={imagesByDate[mon] ?? []} {...commonProps} />
-        <DayCell date={tue} images={imagesByDate[tue] ?? []} {...commonProps} />
-        <DayCell date={wed} images={imagesByDate[wed] ?? []} {...commonProps} />
+        <DayCell date={tue} images={imagesByDate[tue] ?? []} borderLeft {...commonProps} />
+        <DayCell date={wed} images={imagesByDate[wed] ?? []} borderLeft {...commonProps} />
       </div>
 
-      {/* Row 2: Thu / Fri / Weekend (merged) */}
-      <div className="grid grid-cols-3 gap-4">
-        <DayCell date={thu} images={imagesByDate[thu] ?? []} {...commonProps} />
-        <DayCell date={fri} images={imagesByDate[fri] ?? []} {...commonProps} />
-        <DayCell
-          date={sat}
-          images={weekendImages}
-          isWeekend
-          {...commonProps}
-        />
+      {/* Row 2: Thu / Fri / Weekend */}
+      <div className="grid grid-cols-3 items-stretch">
+        <DayCell date={thu} images={imagesByDate[thu] ?? []} borderTop {...commonProps} />
+        <DayCell date={fri} images={imagesByDate[fri] ?? []} borderLeft borderTop {...commonProps} />
+        <DayCell date={sat} images={weekendImages} isWeekend borderLeft borderTop {...commonProps} />
       </div>
 
-      {/* Row 3: Full-width note area */}
-      <NoteArea weekStart={weekStart} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NavBar } from './components/NavBar';
 import { CalendarView } from './components/CalendarView';
+import { NoteArea } from './components/NoteArea';
 import { QuotaBanner } from './components/QuotaBanner';
 import { useFingerprint } from './hooks/useFingerprint';
 import { dateToStr, getWeekStart, addDays } from './lib/utils';
@@ -35,19 +36,24 @@ export default function App() {
       />
       <QuotaBanner />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-6 pt-6 pb-16">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={dateToStr(weekStart)}
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -16 }}
-            transition={{ duration: 0.20, ease: 'easeOut' }}
-          >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={dateToStr(weekStart)}
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -16 }}
+          transition={{ duration: 0.20, ease: 'easeOut' }}
+          className="max-w-5xl w-full mx-auto px-6 pt-6 pb-16 flex flex-col gap-5"
+        >
+          {/* Gray board — no border, just background */}
+          <div style={{ background: '#f4f4f5' }}>
             <CalendarView weekStart={weekStart} />
-          </motion.div>
-        </AnimatePresence>
-      </main>
+          </div>
+
+          {/* Notes panel */}
+          <NoteArea weekStart={weekStart} />
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
