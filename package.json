@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"pnpm --filter server dev\" \"pnpm --filter client dev\"",
-    "build": "pnpm --filter client build && pnpm --filter server build",
+    "build": "npx pnpm run --filter client build",
     "db:push": "pnpm --filter server db:push",
     "db:studio": "pnpm --filter server db:studio"
   },

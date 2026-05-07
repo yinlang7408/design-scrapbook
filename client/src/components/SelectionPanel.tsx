@@ -88,7 +88,7 @@ export function SelectionPanel({
                             }}
                           >
                             <img
-                              src={`/uploads/${img.filePath}`}
+                              src={img.filePath.startsWith('https://') ? img.filePath : `/uploads/${img.filePath}`}
                               alt=""
                               className="w-full h-full object-cover"
                               loading="lazy"

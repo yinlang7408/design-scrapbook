@@ -79,7 +79,7 @@ export function PolaroidCard({
           onClick={() => onImageClick?.(image)}
         >
           <img
-            src={`/uploads/${image.filePath}`}
+            src={image.filePath.startsWith('https://') ? image.filePath : `/uploads/${image.filePath}`}
             alt="design inspiration"
             className="w-full h-full object-cover"
             loading="lazy"

@@ -10,6 +10,7 @@ import { generateTerms } from '../services/claude.js';
 import { generateDesignSkill } from '../services/generateDesignSkill.js';
 import { checkDailyQuota, checkUserQuota } from '../services/quota.js';
 import { dateInTimeZone } from '../lib/timezone.js';
+import { put, del } from '@vercel/blob';
 
 const router = Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -25,34 +26,38 @@ router.post('/upload', upload.single('image'), async (req, res) => {
     // Quota checks
     const { allowed: dailyOk } = await checkDailyQuota();
     if (!dailyOk) {
-      fs.unlinkSync(req.file.path);
       return res.status(429).json({ error: 'daily_limit', message: '今日额度已用完，明天再来' });
     }
 
     const { allowed: userOk } = await checkUserQuota(userId);
     if (!userOk) {
-      fs.unlinkSync(req.file.path);
       return res.status(403).json({ error: 'user_limit', message: '已达 200 张上限，删除旧图片后继续' });
     }
 
     const dateStr = (req.body.date as string) || dateInTimeZone();
-    const relativePath = path.relative(uploadsDir, req.file.path);
+    const ext = path.extname(req.file.originalname) || '.jpg';
+    const filename = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+
+    // Upload to Vercel Blob
+    const blob = await put(filename, req.file.buffer, {
+      access: 'public',
+      contentType: req.file.mimetype,
+    });
 
     // Save image record
     const [image] = await db.insert(images).values({
       userId,
       date: dateStr,
-      filePath: relativePath,
+      filePath: blob.url,
       mimeType: req.file.mimetype,
     }).returning();
 
-    // Generate terms async — we return the image immediately, terms come via a second response shape
+    // Generate terms
     let generatedTerms: { id: string; termEn: string; termZh: string; position: number }[] = [];
     let termsError: string | null = null;
 
     try {
-      const imageBuffer = fs.readFileSync(req.file.path);
-      const raw = await generateTerms(imageBuffer);
+      const raw = await generateTerms(req.file.buffer);
 
       if (raw.length > 0) {
         const inserted = await db.insert(terms).values(
@@ -130,13 +135,16 @@ router.delete('/:id', async (req, res) => {
     const [img] = await db.select().from(images).where(and(eq(images.id, id), eq(images.userId, userId)));
     if (!img) return res.status(404).json({ error: 'Not found' });
 
-    // Delete file
-    const filePath = path.join(uploadsDir, img.filePath);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    // Delete from Blob (if it's a blob URL)
+    if (img.filePath.startsWith('https://')) {
+      try { await del(img.filePath); } catch { /* best effort */ }
+    } else {
+      // Fallback: local file
+      const filePath = path.join(uploadsDir, img.filePath);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
 
-    // Cascade deletes terms via FK
     await db.delete(images).where(eq(images.id, id));
-
     return res.json({ ok: true });
   } catch (e) {
     console.error('Delete error:', e);
@@ -150,7 +158,6 @@ router.delete('/:id/terms/:tid', async (req, res) => {
     const userId = req.headers['x-user-id'] as string;
     const { id, tid } = req.params;
 
-    // Verify ownership
     const [img] = await db.select().from(images).where(and(eq(images.id, id), eq(images.userId, userId)));
     if (!img) return res.status(404).json({ error: 'Not found' });
 
@@ -174,8 +181,7 @@ router.post('/:id/retry-terms', async (req, res) => {
     const [img] = await db.select().from(images).where(and(eq(images.id, id), eq(images.userId, userId)));
     if (!img) return res.status(404).json({ error: 'Not found' });
 
-    const filePath = path.join(uploadsDir, img.filePath);
-    const imageBuffer = fs.readFileSync(filePath);
+    const imageBuffer = await fetchImageBuffer(img.filePath);
     const raw = await generateTerms(imageBuffer);
 
     await db.delete(terms).where(eq(terms.imageId, id));
@@ -193,6 +199,16 @@ router.post('/:id/retry-terms', async (req, res) => {
     return res.status(500).json({ error: 'Retry failed' });
   }
 });
+
+async function fetchImageBuffer(filePath: string): Promise<Buffer> {
+  if (filePath.startsWith('https://')) {
+    const res = await fetch(filePath);
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+  const localPath = path.join(uploadsDir, filePath);
+  return fs.readFileSync(localPath);
+}
 
 // POST /api/images/generate-skill
 router.post('/generate-skill', async (req, res) => {
@@ -224,12 +240,7 @@ router.post('/generate-skill', async (req, res) => {
         .where(eq(terms.imageId, id))
         .orderBy(asc(terms.position));
 
-      const filePath = path.join(uploadsDir, img.filePath);
-      if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: `Image file missing: ${id}` });
-      }
-
-      const buffer = fs.readFileSync(filePath);
+      const buffer = await fetchImageBuffer(img.filePath);
       imageBuffers.push(buffer);
       termsContext.push(imgTerms.map(t => t.termEn).join(', ') || 'No tags');
     }

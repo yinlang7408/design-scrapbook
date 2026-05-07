@@ -1,0 +1,14 @@
+{
+  "framework": "vite",
+  "buildCommand": "npm install -g pnpm && pnpm run --filter client build",
+  "installCommand": "npm install -g pnpm && pnpm install",
+  "outputDirectory": "client/dist",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/server" }
+  ],
+  "functions": {
+    "api/server.ts": {
+      "includeFiles": "server/**"
+    }
+  }
+}

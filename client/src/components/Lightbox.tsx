@@ -52,7 +52,7 @@ export function Lightbox({ image, onClose }: LightboxProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={`/uploads/${image.filePath}`}
+              src={image.filePath.startsWith('https://') ? image.filePath : `/uploads/${image.filePath}`}
               alt="design inspiration"
               className="max-w-full max-h-[72vh] object-contain rounded-lg shadow-2xl"
             />
