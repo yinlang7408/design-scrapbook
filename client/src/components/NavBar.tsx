@@ -28,17 +28,25 @@ export function NavBar({ weekStart, onPrev, onNext, onToday, isCurrentWeek }: Na
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-[#e4e4e7]">
       <div className="max-w-5xl mx-auto px-6 h-14 flex items-center gap-4">
-        {/* Week title — matches reference: bold week number, lighter date range */}
-        <div className="flex items-center gap-3 mr-auto">
-          <button onClick={onToday} className="flex items-center gap-3 hover:opacity-70 transition-opacity">
-            <span className="text-xl font-semibold tracking-tight text-[#18181b]">{week}</span>
+        <button
+          onClick={onToday}
+          className="mr-auto text-xl font-semibold text-[#18181b] hover:opacity-70 transition-opacity"
+        >
+          设计手帐
+        </button>
+
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={onToday}
+            className="flex items-center gap-3 min-w-0 hover:opacity-70 transition-opacity"
+          >
+            <span className="text-lg font-semibold text-[#18181b] whitespace-nowrap">{week}</span>
             <span className="text-[#71717a] text-sm font-normal">|</span>
-            <span className="text-[#71717a] text-sm font-normal">{range}</span>
+            <span className="text-[#71717a] text-sm font-normal truncate">{range}</span>
           </button>
         </div>
 
-        {/* Nav controls */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={onPrev}
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f4f4f5] text-[#71717a] transition-colors"

@@ -13,19 +13,24 @@ const anthropic = API_KEY
     })
   : null;
 
-const PROMPT = `You are a design expert. Analyze this image and generate exactly 3-5 design terminology keywords that best describe its visual style, layout, color palette, typography, composition, or interaction patterns.
+const PROMPT = `You are a top-tier design director. Analyze this image and pick only the most defining design tag(s) that would help a PM or designer instantly communicate this aesthetic to an AI image generator or design system.
 
-Return ONLY a valid JSON array with no other text:
+Scan across: genre/era, color system, typography, layout, material/texture, spatial rhythm, atmosphere.
+
+Return ONLY a valid JSON array with no other text. Fewer but sharper is better — if nothing truly stands out beyond the genre, say just 1. Push to 4 only when the image genuinely spans multiple strong dimensions:
 [
-  {"en": "Asymmetric Balance", "zh": "非对称平衡"},
-  {"en": "Negative Space", "zh": "留白"}
+  {"en": "Brutalism", "zh": "野性主义"},
+  {"en": "Editorial Grid", "zh": "编辑网格"},
+  {"en": "Desaturated Earth", "zh": "降饱和大地色"},
+  {"en": "Motion Blur", "zh": "动态模糊"}
 ]
 
-Important: Always generate 3-5 terms even if the image doesn't look like a professional design screenshot. Describe what you see from a design perspective (colors, composition, mood, style).
 Rules:
-- Exactly 3-5 terms total
-- Each term must be specific design vocabulary
-- English terms: 1-3 words preferred`;
+- 1–4 terms total; default to 1–2 unless the image is richly layered
+- English: actionable design keyword, 1–3 words, Title Case
+- Chinese: industry-standard translation, 2–5 characters
+- Every term must be something you'd actually type into a prompt — if it won't produce a visual difference, skip it
+- Never output vague academic filler like "balance", "harmony", "contrast"`;
 
 export interface DesignTerm {
   en: string;
@@ -74,5 +79,5 @@ export async function generateTerms(imageBuffer: Buffer): Promise<DesignTerm[]> 
   if (!jsonMatch) return [];
 
   const parsed: DesignTerm[] = JSON.parse(jsonMatch[0]);
-  return parsed.filter((t: DesignTerm) => t.en && t.zh).slice(0, 5);
+  return parsed.filter((t: DesignTerm) => t.en && t.zh).slice(0, 4);
 }

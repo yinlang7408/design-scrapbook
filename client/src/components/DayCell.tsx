@@ -29,6 +29,7 @@ interface DayCellProps {
   onDeleteImage: (id: string) => void;
   onDeleteTerm: (imageId: string, termId: string) => void;
   onRetryTerms: (imageId: string) => void;
+  onImageClick: (image: ImageRecord) => void;
   uploadingFor?: string | null;
   retryingImageId?: string | null;
   isDisabled?: boolean;
@@ -39,7 +40,7 @@ interface DayCellProps {
 
 export function DayCell({
   date, images, cellWidth,
-  onUpload, onDeleteImage, onDeleteTerm, onRetryTerms,
+  onUpload, onDeleteImage, onDeleteTerm, onRetryTerms, onImageClick,
   uploadingFor, retryingImageId, isDisabled, isWeekend,
   borderLeft, borderTop,
 }: DayCellProps) {
@@ -66,6 +67,7 @@ export function DayCell({
         onDelete={onDeleteImage}
         onDeleteTerm={onDeleteTerm}
         onRetryTerms={onRetryTerms}
+        onImageClick={onImageClick}
         isRetryingTerms={retryingImageId === img.id}
       />
     </div>
@@ -79,7 +81,7 @@ export function DayCell({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22 }}
       className="flex flex-col"
-      style={{ minHeight: 200 }}
+      style={{ minHeight: 320 }}
     >
       {/* Date header — always visible */}
       <div className="flex flex-col items-center pt-4 pb-3">

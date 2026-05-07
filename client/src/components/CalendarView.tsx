@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AlertCircle, X } from 'lucide-react';
 import { DayCell } from './DayCell';
+import { Lightbox } from './Lightbox';
 import { useImages, useUploadImage, useDeleteImage, useDeleteTerm, useRetryTerms } from '@/hooks/useImages';
 import { useQuota } from '@/hooks/useQuota';
 import { cn, dateToStr, addDays, todayStr } from '@/lib/utils';
@@ -14,6 +15,7 @@ export function CalendarView({ weekStart }: CalendarViewProps) {
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [retryingImageId, setRetryingImageId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: 'warning' | 'error'; message: string } | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<ImageRecord | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(960);
 
@@ -129,6 +131,7 @@ export function CalendarView({ weekStart }: CalendarViewProps) {
     onDeleteImage: handleDeleteImage,
     onDeleteTerm: handleDeleteTerm,
     onRetryTerms: handleRetryTerms,
+    onImageClick: setLightboxImage,
     uploadingFor,
     retryingImageId,
     isDisabled,
@@ -171,6 +174,7 @@ export function CalendarView({ weekStart }: CalendarViewProps) {
         <DayCell date={sat} images={weekendImages} isWeekend borderLeft borderTop {...commonProps} />
       </div>
 
+      <Lightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />
     </div>
   );
 }

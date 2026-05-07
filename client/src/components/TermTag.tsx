@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { Term } from '@/lib/api';
 
 interface TermTagProps {
@@ -67,10 +66,8 @@ export function TermTag({ terms, imageId, onDeleteTerm }: TermTagProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.96 }}
             transition={{ duration: 0.14, ease: 'easeOut' }}
-            className="flex flex-col gap-0.5 p-1.5 rounded-xl shadow-lg"
+            className="inline-flex flex-col gap-0.5 p-1.5 rounded-xl shadow-lg whitespace-nowrap"
             style={{
-              minWidth: 155,
-              maxWidth: 215,
               background: 'rgba(255,255,255,0.82)',
               backdropFilter: 'blur(12px)',
               boxShadow: '0 4px 16px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
@@ -114,13 +111,11 @@ function TermRow({ term, onCopy, onDelete, copied }: TermRowProps) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Term text — not clickable itself */}
       <span className="flex-1 flex items-center gap-1.5 min-w-0">
-        <span className="text-[11px] font-medium text-[#18181b] truncate leading-tight">{term.termEn}</span>
+        <span className="text-[11px] font-medium text-[#18181b] leading-tight whitespace-nowrap">{term.termEn}</span>
         <span className="text-[9px] text-[#a1a1aa] flex-shrink-0">{term.termZh}</span>
       </span>
 
-      {/* Action icons — appear on hover */}
       <AnimatePresence>
         {hovered && (
           <motion.div
@@ -130,7 +125,6 @@ function TermRow({ term, onCopy, onDelete, copied }: TermRowProps) {
             transition={{ duration: 0.1 }}
             className="flex items-center gap-0.5 flex-shrink-0"
           >
-            {/* Copy */}
             <button
               onClick={onCopy}
               className="w-5 h-5 rounded flex items-center justify-center bg-black/5 hover:bg-black/10 transition-colors"
@@ -140,7 +134,6 @@ function TermRow({ term, onCopy, onDelete, copied }: TermRowProps) {
                 : <Copy size={9} className="text-[#71717a]" />
               }
             </button>
-            {/* Delete */}
             <button
               onClick={onDelete}
               className="w-5 h-5 rounded flex items-center justify-center bg-black/5 hover:bg-red-100 transition-colors"

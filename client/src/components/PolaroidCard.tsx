@@ -42,11 +42,12 @@ interface PolaroidCardProps {
   onDelete: (id: string) => void;
   onDeleteTerm: (imageId: string, termId: string) => void;
   onRetryTerms?: (id: string) => void;
+  onImageClick?: (image: ImageRecord) => void;
   isRetryingTerms?: boolean;
 }
 
 export function PolaroidCard({
-  image, width, onDelete, onDeleteTerm, onRetryTerms, isRetryingTerms,
+  image, width, onDelete, onDeleteTerm, onRetryTerms, onImageClick, isRetryingTerms,
 }: PolaroidCardProps) {
   const [hovered, setHovered] = useState(false);
 
@@ -73,7 +74,11 @@ export function PolaroidCard({
       <Pin seed={image.id} />
 
       <div className="p-2 pb-0">
-        <div className="relative overflow-hidden" style={{ height: imgHeight, borderRadius: 0 }}>
+        <div
+          className="relative overflow-hidden cursor-pointer"
+          style={{ height: imgHeight, borderRadius: 0 }}
+          onClick={() => onImageClick?.(image)}
+        >
           <img
             src={`/uploads/${image.filePath}`}
             alt="design inspiration"
@@ -123,7 +128,7 @@ export function PolaroidCard({
       )}
 
       {image.terms.length > 0 && (
-        <div className="absolute left-2 z-30" style={{ bottom: termBottom }}>
+        <div className="absolute left-2 z-30" style={{ bottom: termBottom }} onClick={(e) => e.stopPropagation()}>
           <TermTag terms={image.terms} imageId={image.id} onDeleteTerm={onDeleteTerm} />
         </div>
       )}
