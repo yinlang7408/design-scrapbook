@@ -41,6 +41,11 @@ export async function uploadImage(file: File, date: string): Promise<{ image: Im
   return res.data;
 }
 
+export async function fetchAllImages(): Promise<ImageRecord[]> {
+  const res = await api.get('/images', { params: { all: '1' } });
+  return res.data;
+}
+
 export async function fetchImages(start: string, end: string): Promise<ImageRecord[]> {
   const res = await api.get('/images', { params: { start, end } });
   return res.data;
@@ -72,6 +77,11 @@ export async function fetchNote(date: string): Promise<{ content: string }> {
 
 export async function saveNote(date: string, content: string): Promise<void> {
   await api.put('/notes', { date, content });
+}
+
+export async function generateDesignSkill(imageIds: string[]): Promise<{ markdown: string }> {
+  const res = await api.post('/images/generate-skill', { imageIds });
+  return res.data;
 }
 
 export function getApiErrorMessage(error: unknown, fallback: string): string {

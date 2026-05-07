@@ -4,9 +4,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { db } from '../db/index.js';
 import { images, terms } from '../db/schema.js';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq, and, gte, lte, asc } from 'drizzle-orm';
 import { upload } from '../middleware/upload.js';
 import { generateTerms } from '../services/claude.js';
+import { generateDesignSkill } from '../services/generateDesignSkill.js';
 import { checkDailyQuota, checkUserQuota } from '../services/quota.js';
 import { dateInTimeZone } from '../lib/timezone.js';
 
@@ -75,10 +76,10 @@ router.post('/upload', upload.single('image'), async (req, res) => {
   }
 });
 
-// GET /api/images?start=YYYY-MM-DD&end=YYYY-MM-DD&uid=...
+// GET /api/images?start=YYYY-MM-DD&end=YYYY-MM-DD&all=1
 router.get('/', async (req, res) => {
   try {
-    const { start, end, uid } = req.query as { start?: string; end?: string; uid?: string };
+    const { start, end, uid, all } = req.query as { start?: string; end?: string; uid?: string; all?: string };
     const userId = uid || (req.headers['x-user-id'] as string);
     if (!userId) return res.status(400).json({ error: 'Missing uid' });
 
@@ -92,8 +93,8 @@ router.get('/', async (req, res) => {
       .where(
         and(
           eq(images.userId, userId),
-          start ? gte(images.date, start) : undefined,
-          end ? lte(images.date, end) : undefined
+          all === '1' ? undefined : (start ? gte(images.date, start) : undefined),
+          all === '1' ? undefined : (end ? lte(images.date, end) : undefined)
         )
       );
 
@@ -190,6 +191,54 @@ router.post('/:id/retry-terms', async (req, res) => {
   } catch (e) {
     console.error('Retry error:', e);
     return res.status(500).json({ error: 'Retry failed' });
+  }
+});
+
+// POST /api/images/generate-skill
+router.post('/generate-skill', async (req, res) => {
+  try {
+    const userId = req.headers['x-user-id'] as string;
+    if (!userId) return res.status(400).json({ error: 'Missing X-User-ID header' });
+
+    const { imageIds } = req.body as { imageIds?: string[] };
+    if (!imageIds || !Array.isArray(imageIds) || imageIds.length === 0) {
+      return res.status(400).json({ error: 'Missing or empty imageIds array' });
+    }
+
+    if (imageIds.length > 20) {
+      return res.status(400).json({ error: 'Maximum 20 images allowed' });
+    }
+
+    const { allowed: dailyOk } = await checkDailyQuota();
+    if (!dailyOk) return res.status(429).json({ error: 'daily_limit', message: '今日额度已用完，明天再来' });
+
+    const imageBuffers: Buffer[] = [];
+    const termsContext: string[] = [];
+
+    for (const id of imageIds) {
+      const [img] = await db.select().from(images)
+        .where(and(eq(images.id, id), eq(images.userId, userId)));
+      if (!img) return res.status(403).json({ error: `Image ${id} not found or not owned` });
+
+      const imgTerms = await db.select().from(terms)
+        .where(eq(terms.imageId, id))
+        .orderBy(asc(terms.position));
+
+      const filePath = path.join(uploadsDir, img.filePath);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: `Image file missing: ${id}` });
+      }
+
+      const buffer = fs.readFileSync(filePath);
+      imageBuffers.push(buffer);
+      termsContext.push(imgTerms.map(t => t.termEn).join(', ') || 'No tags');
+    }
+
+    const markdown = await generateDesignSkill(imageBuffers, termsContext);
+    return res.json({ markdown });
+  } catch (e) {
+    console.error('Generate skill error:', e);
+    return res.status(500).json({ error: 'Failed to generate design skill' });
   }
 });
 

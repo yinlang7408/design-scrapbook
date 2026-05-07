@@ -5,13 +5,12 @@ import { TermTag } from './TermTag';
 import { seededRandom } from '@/lib/utils';
 import type { ImageRecord } from '@/lib/api';
 
-// Warm, design-board pin colors
 const PIN_COLORS = [
-  { body: '#e85d4a', shine: '#f28b7d' }, // coral red
-  { body: '#f5a623', shine: '#fbc86a' }, // amber
-  { body: '#4a90d9', shine: '#7db8f0' }, // sky blue
-  { body: '#7b68ee', shine: '#a99cf5' }, // lavender
-  { body: '#50c878', shine: '#88dfa8' }, // mint green
+  { body: '#e85d4a', shine: '#f28b7d' },
+  { body: '#f5a623', shine: '#fbc86a' },
+  { body: '#4a90d9', shine: '#7db8f0' },
+  { body: '#7b68ee', shine: '#a99cf5' },
+  { body: '#50c878', shine: '#88dfa8' },
 ];
 
 function Pin({ seed }: { seed: string }) {
@@ -86,25 +85,20 @@ export function PolaroidCard({
             loading="lazy"
           />
 
-          {/* Delete — single click, shown on hover */}
-          <AnimatePresence>
-            {hovered && (
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={(e) => { e.stopPropagation(); onDelete(image.id); }}
-                className="absolute top-1.5 right-1.5 z-20 w-6 h-6 flex items-center justify-center rounded-full bg-black/35 hover:bg-red-500 backdrop-blur-sm text-white shadow transition-colors"
-              >
-                <Trash2 size={10} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-
+          {hovered && (
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={(e) => { e.stopPropagation(); onDelete(image.id); }}
+              className="absolute top-1.5 right-1.5 z-20 w-6 h-6 flex items-center justify-center rounded-full bg-black/35 hover:bg-red-500 backdrop-blur-sm text-white shadow transition-colors"
+            >
+              <Trash2 size={10} />
+            </motion.button>
+          )}
         </div>
       </div>
 
-      {/* Bottom strip */}
       {image.terms.length === 0 && onRetryTerms ? (
         <div className="px-2 pt-1 pb-2">
           <button

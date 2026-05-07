@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers } from 'lucide-react';
 import { getWeekNumber, addDays } from '@/lib/utils';
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -20,9 +20,10 @@ interface NavBarProps {
   onNext: () => void;
   onToday: () => void;
   isCurrentWeek: boolean;
+  onOpenSelect: () => void;
 }
 
-export function NavBar({ weekStart, onPrev, onNext, onToday, isCurrentWeek }: NavBarProps) {
+export function NavBar({ weekStart, onPrev, onNext, onToday, isCurrentWeek, onOpenSelect }: NavBarProps) {
   const { week, range } = formatHeader(weekStart);
 
   return (
@@ -58,6 +59,14 @@ export function NavBar({ weekStart, onPrev, onNext, onToday, isCurrentWeek }: Na
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f4f4f5] text-[#71717a] transition-colors"
           >
             <ChevronRight size={16} />
+          </button>
+          <button
+            onClick={onOpenSelect}
+            className="ml-2 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[#e4e4e7] text-[#71717a] hover:bg-[#f4f4f5] transition-colors"
+            title="Select images"
+          >
+            <Layers size={13} />
+            Select
           </button>
           {!isCurrentWeek && (
             <button

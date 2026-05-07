@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchImages, uploadImage, deleteImage, deleteTerm, retryTerms } from '@/lib/api';
+import { fetchImages, fetchAllImages, uploadImage, deleteImage, deleteTerm, retryTerms } from '@/lib/api';
 import type { ImageRecord, Term } from '@/lib/api';
 import { dateToStr } from '@/lib/utils';
 
